@@ -2,9 +2,9 @@ version: "3.9"
 
 services:
   etherfi-syncing-client:
-    build: .
+    image: chainnodes/etherfi-teku-sync-client:latest
     volumes:
-      - ./storage:/_storage_
-    restart: on-failure
+      - ./keys:/_storage_
+    restart: unless-stopped
     env_file:
       - .env

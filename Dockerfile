@@ -4,10 +4,10 @@ FROM node:18.3.0
 
 WORKDIR /app
 
-COPY ["package.json", "yarn.lock", "./"]
+COPY ["package.json", "package-lock.json", "./"]
 
-RUN yarn
+RUN npm install
 
 COPY . .
 
-CMD [ "yarn", "start" ]
+CMD [ "npm", "run", "start" ]
