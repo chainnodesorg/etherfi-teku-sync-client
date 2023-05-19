@@ -4,3 +4,5 @@ node_modules
 output
 storage
 backup
+
+./privateEtherfiKeystore.json

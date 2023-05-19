@@ -2,9 +2,10 @@ version: "3.9"
 
 services:
   etherfi-syncing-client:
-    image: chainnodes/etherfi-teku-sync-client:latest
+    image: ghcr.io/chainnodes/etherfi-teku-sync-client:latest
     volumes:
       - ./keys:/_storage_
+      - ./privateEtherfiKeystore.json:/privateEtherfiKeystore.json
     restart: unless-stopped
     env_file:
       - .env
