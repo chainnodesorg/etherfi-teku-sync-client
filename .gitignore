@@ -5,4 +5,5 @@ output
 storage
 backup
 
-./privateEtherfiKeystore.json
+/privateEtherfiKeystore.json
+/keys
