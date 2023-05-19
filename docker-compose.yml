@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   etherfi-syncing-client:
-    image: ghcr.io/chainnodes/etherfi-teku-sync-client:latest
+    image: ghcr.io/chainnodesorg/etherfi-teku-sync-client:latest
     volumes:
       - ./keys:/_storage_
       - ./privateEtherfiKeystore.json:/privateEtherfiKeystore.json

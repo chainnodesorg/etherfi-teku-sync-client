@@ -47,7 +47,7 @@ jobs:
       - name: Push image to GitHub Container Registry
         run: docker push ${{ env.SHA_TAG }}
 
-      # Tag as latest if on master
+      # Tag as latest if on main
       - name: Retag Docker Image latest
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: docker tag ${{ env.SHA_TAG }} ${{ env.LATEST_TAG }} && docker push ${{ env.LATEST_TAG }}
