@@ -2,9 +2,6 @@ import fs from "fs";
 import { getConfig } from "./config.js";
 
 export const createFSBidOutput = (location, data, identifier) => {
-  const { ETHERFI_SC_CONSENSUS_LOCATION, ETHERFI_SC_CLIENT_LOCATION } =
-    getConfig();
-
   createDirSafe(location);
   createFile(
     `${location}/keystore-${identifier}.txt`,

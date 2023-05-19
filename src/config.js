@@ -6,9 +6,6 @@ export const getConfig = () => {
     process.env.ETHERFI_SC_PRIVATE_KEYS_FILE_LOCATION;
   const OUTPUT_LOCATION = process.env.ETHERFI_SC_OUTPUT_LOCATION;
   const PASSWORD = process.env.ETHERFI_SC_PASSWORD;
-  const ETHERFI_SC_CONSENSUS_LOCATION =
-    process.env.ETHERFI_SC_CONSENSUS_LOCATION;
-  const ETHERFI_SC_CLIENT_LOCATION = process.env.ETHERFI_SC_CLIENT_LOCATION;
 
   const env = {
     GRAPH_URL,
@@ -17,12 +14,9 @@ export const getConfig = () => {
     OUTPUT_LOCATION,
     PASSWORD,
     IPFS_GATEWAY,
-    ETHERFI_SC_CONSENSUS_LOCATION,
-    ETHERFI_SC_CLIENT_LOCATION,
   };
 
   const valuesAsArray = Object.values(env);
-  console.log(valuesAsArray);
 
   if (!valuesAsArray.every((x) => typeof x === "string")) {
     throw Error("env did not load correctly, stopping");
