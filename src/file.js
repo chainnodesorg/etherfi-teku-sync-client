@@ -25,8 +25,8 @@ export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipi
     proposerConfig.proposer_config = {};
   }
 
-  proposerConfig.proposer_config[pubKey.toLowerCase()] = {
-    fee_recipient: getAddress(feeRecipient.toLowerCase()),
+  proposerConfig.proposer_config[pubKey.toLowerCase().trim()] = {
+    fee_recipient: getAddress(feeRecipient.toLowerCase().trim()),
   };
 
   // write back
