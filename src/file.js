@@ -1,16 +1,11 @@
-import fs from "fs";
-import { getConfig } from "./config.js";
+import fs from 'fs';
+import { getConfig } from './config.js';
+import { getAddress } from 'ethers/lib/utils.js';
 
 export const createFSBidOutput = (location, data, identifier) => {
   createDirSafe(location);
-  createFile(
-    `${location}/keystore-${identifier}.txt`,
-    data.validatorKeyPassword
-  );
-  createFile(
-    `${location}/keystore-${identifier}.json`,
-    JSON.stringify(data.validatorKeyFile)
-  );
+  createFile(`${location}/keystore-${identifier}.txt`, data.validatorKeyPassword);
+  createFile(`${location}/keystore-${identifier}.json`, JSON.stringify(data.validatorKeyFile));
 };
 
 export const validatorFilesExist = (location, identifier) => {
@@ -22,6 +17,20 @@ export const validatorFilesExist = (location, identifier) => {
   }
 
   return true;
+};
+
+export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipient) => {
+  const proposerConfig = JSON.parse(fs.readFileSync(tekuProposerConfigFile));
+  if (!proposerConfig.proposer_config) {
+    proposerConfig.proposer_config = {};
+  }
+
+  proposerConfig.proposer_config[pubKey.toLowerCase()] = {
+    fee_recipient: getAddress(feeRecipient.toLowerCase()),
+  };
+
+  // write back
+  fs.writeFileSync(tekuProposerConfigFile, JSON.stringify(proposerConfig, null, 2));
 };
 
 const createDirSafe = (location) => {

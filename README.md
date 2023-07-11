@@ -17,6 +17,9 @@ Files are shared by creating them into a given directory (docker volume).
 
 If using k8s you will need to mount a volume with multi read and write permissions (`ReadWriteMany`, see [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) for more information). You will need to mount the volume to your Teku container and to this container.
 
+You will need to expose your docker.sock to this container in order to automatically reload teku when new files arrive.
+This has not been tested with k8s. To reload with k8s, implement your own logic or create a PR.
+
 Here is a sample `docker-compose.yml`:
 
 ```yaml
@@ -27,6 +30,8 @@ services:
     image: chainnodes/etherfi-teku-sync-client:latest
     volumes:
       - ./keys:/_storage_
+      - ./teku_proposer_config.json:/teku_proposer_config.json
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     env_file:
       - .env
@@ -46,4 +51,5 @@ ETHERFI_SC_GRAPH_URL=https://api.studio.thegraph.com/query/41778/goerli-dressreh
 ETHERFI_SC_PRIVATE_KEYS_FILE_LOCATION=/_storage_/input/privateEtherfiKeystore-1681911458600.json
 ETHERFI_SC_OUTPUT_LOCATION=/_storage_
 ETHERFI_SC_PASSWORD=Password123!
+ETHERFI_SC_TEKU_PROPOSER_FILE=/teku_proposer_config.json
 ```

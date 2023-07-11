@@ -1,3 +1,3 @@
-import cronJobDetectValidators from "./src/cron-detect.js";
+import cronJobDetectValidators from './src/cron-detect.js';
 
 cronJobDetectValidators.start();
