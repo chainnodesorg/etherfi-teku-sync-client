@@ -15,6 +15,7 @@ async function run() {
 
   const bids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER);
 
+  let didChangeAnything = false;
   for (const bid of bids) {
     const { validator, pubKeyIndex } = bid;
 
@@ -22,6 +23,7 @@ async function run() {
       // file already exists. skip.
       continue;
     }
+    didChangeAnything = true;
 
     console.log(`> start processing bid with id:${bid.id}`);
 
@@ -37,12 +39,15 @@ async function run() {
     console.log(`creating validator keys for bid:${bid.id}`);
     createFSBidOutput(OUTPUT_LOCATION, data, bid.id);
 
-    // Add fee recipient and reload teku (sighup)
-    console.log(`saving proposer config and reloading teku`);
+    // Add fee recipient
+    console.log(`saving proposer config`);
     saveTekuProposerConfig(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode);
-    await sigHupAllTekus();
 
     console.log(`< end processing bid with id:${bid.id}`);
+  }
+  if (didChangeAnything) {
+    console.log('reloading teku now (sighup)');
+    await sigHupAllTekus();
   }
 
   console.log('=====detecting new validators * end * =====');
