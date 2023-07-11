@@ -1,7 +1,7 @@
 import got from 'got';
 
 export async function sigHupAllTekus() {
-  const allContainers = JSON.parse(await got('http://unix:/var/run/docker.sock:/containers/json', { enableUnixSockets: true }));
+  const allContainers = JSON.parse((await got('http://unix:/var/run/docker.sock:/containers/json', { enableUnixSockets: true })).body);
 
   for (const container of allContainers) {
     if (container.Image.toLowerCase().trim().includes('consensys/teku')) {
