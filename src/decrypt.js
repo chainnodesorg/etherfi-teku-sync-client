@@ -4,10 +4,25 @@ import EC from 'elliptic';
 import BN from 'bn.js';
 
 function decrypt(text, ENCRYPTION_KEY) {
+  // should have the form [iv]:[ciphertext]
   let textParts = text.split(':');
   let iv = Buffer.from(textParts.shift(), 'hex');
   let encryptedText = Buffer.from(textParts.join(':'), 'hex');
   let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let decrypted = decipher.update(encryptedText);
+
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted.toString();
+}
+
+function decryptGCM(text, ENCRYPTION_KEY) {
+  // should have the form [iv]:[data]:[authTag]
+  let textParts = text.split(':');
+  let iv = Buffer.from(textParts.shift(), 'hex');
+  let encryptedText = Buffer.from(textParts.shift(), 'hex');
+  let decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY), iv);
+  decipher.setAuthTag(Buffer.from(textParts.shift(), 'hex'));
   let decrypted = decipher.update(encryptedText);
 
   decrypted = Buffer.concat([decrypted, decipher.final()]);
@@ -56,9 +71,29 @@ export const decryptValidatorKeyInfo = (file, keypairForIndex) => {
   const nodeOperatorPrivKey = new BN(privateKey);
   const nodeOperatorSharedSecret = receivedStakerPubKeyPoint.mul(nodeOperatorPrivKey).getX();
   const secretAsArray = nodeOperatorSharedSecret.toArrayLike(Buffer, 'be', 32);
-  const validatorKeyString = decrypt(file['encryptedValidatorKey'], nodeOperatorSharedSecret.toArrayLike(Buffer, 'be', 32));
-  const validatorKeyPassword = decrypt(file['encryptedPassword'], secretAsArray);
-  const keystoreName = decrypt(file['encryptedKeystoreName'], secretAsArray);
+
+  let isCBC = false;
+  if (
+    file['encryptedValidatorKey'].split(':').length === 2 &&
+    file['encryptedPassword'].split(':').length === 2 &&
+    file['encryptedKeystoreName'].split(':').length === 2
+  ) {
+    isCBC = true;
+  }
+
+  let validatorKeyString;
+  let validatorKeyPassword;
+  let keystoreName;
+  if (isCBC) {
+    validatorKeyString = decrypt(file['encryptedValidatorKey'], nodeOperatorSharedSecret.toArrayLike(Buffer, 'be', 32));
+    validatorKeyPassword = decrypt(file['encryptedPassword'], secretAsArray);
+    keystoreName = decrypt(file['encryptedKeystoreName'], secretAsArray);
+  } else {
+    validatorKeyString = decryptGCM(file['encryptedValidatorKey'], nodeOperatorSharedSecret.toArrayLike(Buffer, 'be', 32));
+    validatorKeyPassword = decryptGCM(file['encryptedPassword'], secretAsArray);
+    keystoreName = decryptGCM(file['encryptedKeystoreName'], secretAsArray);
+  }
+
   return { validatorKeyFile: JSON.parse(validatorKeyString), validatorKeyPassword, keystoreName };
 };
 

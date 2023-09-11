@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 export const getConfig = () => {
   const IPFS_GATEWAY = process.env.ETHERFI_SC_IPFS_GATEWAY;
   const GRAPH_URL = process.env.ETHERFI_SC_GRAPH_URL;

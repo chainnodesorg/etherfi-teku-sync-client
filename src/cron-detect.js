@@ -13,6 +13,9 @@ async function run() {
 
   const privateKeys = extractPrivateKeysFromFS(PRIVATE_KEYS_FILE_LOCATION);
 
+  const validatorKey = decryptKeyPairJSON(privateKeys, PASSWORD);
+  const { pubKeyArray, privKeyArray } = validatorKey;
+
   const bids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER);
 
   let didChangeAnything = false;
@@ -30,8 +33,6 @@ async function run() {
     // Fetch and decrypt
     const { ipfsHashForEncryptedValidatorKey, validatorPubKey, etherfiNode } = validator;
     const file = await fetchFromIpfs(ipfsHashForEncryptedValidatorKey);
-    const validatorKey = decryptKeyPairJSON(privateKeys, PASSWORD);
-    const { pubKeyArray, privKeyArray } = validatorKey;
     const keypairForIndex = getKeyPairByPubKeyIndex(pubKeyIndex, privKeyArray, pubKeyArray);
     const data = decryptValidatorKeyInfo(file, keypairForIndex);
 
