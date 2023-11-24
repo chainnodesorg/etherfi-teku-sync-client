@@ -4,12 +4,12 @@ import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig } from '
 import { extractPrivateKeysFromFS, getKeyPairByPubKeyIndex, decryptKeyPairJSON, decryptValidatorKeyInfo } from './decrypt.js';
 import { getConfig } from './config.js';
 import { retrieveBidsFromSubgraph } from './subgraph.js';
-import { sigHupAllTekus } from './teku.js';
+import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
 
 async function run() {
   console.log('=====detecting new validators * start * =====');
 
-  const { GRAPH_URL, BIDDER, PRIVATE_KEYS_FILE_LOCATION, OUTPUT_LOCATION, PASSWORD, TEKU_PROPOSER_FILE } = getConfig();
+  const { GRAPH_URL, BIDDER, PRIVATE_KEYS_FILE_LOCATION, OUTPUT_LOCATION, PASSWORD, TEKU_PROPOSER_FILE, RESTART_MODE } = getConfig();
 
   const privateKeys = extractPrivateKeysFromFS(PRIVATE_KEYS_FILE_LOCATION);
 
@@ -48,7 +48,11 @@ async function run() {
   }
   if (didChangeAnything) {
     console.log('reloading teku now (sighup)');
-    await sigHupAllTekus();
+    if (RESTART_MODE === 'docker') {
+      await sigHupAllTekus();
+    } else if (RESTART_MODE === 'kubernetes') {
+      await kubernetesSigHupTeku();
+    }
   }
 
   console.log('=====detecting new validators * end * =====');

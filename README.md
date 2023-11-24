@@ -52,4 +52,12 @@ ETHERFI_SC_PRIVATE_KEYS_FILE_LOCATION=/_storage_/input/privateEtherfiKeystore-16
 ETHERFI_SC_OUTPUT_LOCATION=/_storage_
 ETHERFI_SC_PASSWORD=Password123!
 ETHERFI_SC_TEKU_PROPOSER_FILE=/teku_proposer_config.json
+# docker, kubernetes or none
+ETHERFI_SC_RESTART_MODE=docker
 ```
+
+Make sure to set `validators-proposer-config-refresh-enabled` to true in your teku (either teku_config.yml or command line).
+Otherwise the updated proposer config will not be reloaded when new validators come in.
+
+If running in a kubernetes pod, you will need to set `shareProcessNamespace: true` in order for the sighup reload to work properly.
+You also need to set the `SYS_PTRACE` capability for this to work.

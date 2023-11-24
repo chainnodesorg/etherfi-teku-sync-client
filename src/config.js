@@ -8,6 +8,7 @@ export const getConfig = () => {
   const OUTPUT_LOCATION = process.env.ETHERFI_SC_OUTPUT_LOCATION;
   const PASSWORD = process.env.ETHERFI_SC_PASSWORD;
   const TEKU_PROPOSER_FILE = process.env.ETHERFI_SC_TEKU_PROPOSER_FILE;
+  const RESTART_MODE = process.env.ETHERFI_SC_RESTART_MODE || 'none';
 
   const env = {
     GRAPH_URL,
@@ -17,12 +18,16 @@ export const getConfig = () => {
     PASSWORD,
     IPFS_GATEWAY,
     TEKU_PROPOSER_FILE,
+    RESTART_MODE,
   };
 
   const valuesAsArray = Object.values(env);
 
   if (!valuesAsArray.every((x) => typeof x === 'string')) {
     throw Error('env did not load correctly, stopping');
+  }
+  if (!['none', 'docker', 'kubernetes'].includes(RESTART_MODE)) {
+    throw Error('RESTART_MODE given not supported, stopping');
   }
 
   return env;
