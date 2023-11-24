@@ -33,6 +33,25 @@ export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipi
   fs.writeFileSync(tekuProposerConfigFile, JSON.stringify(proposerConfig, null, 2));
 };
 
+export function tekuProposerConfigExists(tekuProposerConfigFile, pubKey, feeRecipient) {
+  const proposerConfig = JSON.parse(fs.readFileSync(tekuProposerConfigFile));
+  if (!proposerConfig) {
+    return false;
+  }
+
+  if (!proposerConfig.proposer_config) {
+    return false;
+  }
+
+  const saved = proposerConfig.proposer_config[pubKey.toLowerCase().trim()];
+
+  if (saved.fee_recipient !== getAddress(feeRecipient.toLowerCase().trim())) {
+    return false;
+  }
+
+  return true;
+}
+
 const createDirSafe = (location) => {
   if (fs.existsSync(location)) {
     return;

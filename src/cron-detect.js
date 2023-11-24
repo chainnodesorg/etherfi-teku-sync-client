@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import { fetchFromIpfs } from './ipfs.js';
-import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig } from './file.js';
+import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig, tekuProposerConfigExists } from './file.js';
 import { extractPrivateKeysFromFS, getKeyPairByPubKeyIndex, decryptKeyPairJSON, decryptValidatorKeyInfo } from './decrypt.js';
 import { getConfig } from './config.js';
 import { retrieveBidsFromSubgraph } from './subgraph.js';
@@ -22,7 +22,9 @@ async function run() {
   for (const bid of bids) {
     const { validator, pubKeyIndex } = bid;
 
-    if (validatorFilesExist(OUTPUT_LOCATION, bid.id)) {
+    const { ipfsHashForEncryptedValidatorKey, validatorPubKey, etherfiNode } = validator;
+
+    if (validatorFilesExist(OUTPUT_LOCATION, bid.id) && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
       // file already exists. skip.
       continue;
     }
@@ -31,7 +33,6 @@ async function run() {
     console.log(`> start processing bid with id:${bid.id}`);
 
     // Fetch and decrypt
-    const { ipfsHashForEncryptedValidatorKey, validatorPubKey, etherfiNode } = validator;
     const file = await fetchFromIpfs(ipfsHashForEncryptedValidatorKey);
     const keypairForIndex = getKeyPairByPubKeyIndex(pubKeyIndex, privKeyArray, pubKeyArray);
     const data = decryptValidatorKeyInfo(file, keypairForIndex);
