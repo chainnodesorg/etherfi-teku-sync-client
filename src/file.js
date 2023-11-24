@@ -44,6 +44,9 @@ export function tekuProposerConfigExists(tekuProposerConfigFile, pubKey, feeReci
   }
 
   const saved = proposerConfig.proposer_config[pubKey.toLowerCase().trim()];
+  if (!saved) {
+    return false;
+  }
 
   if (saved.fee_recipient !== getAddress(feeRecipient.toLowerCase().trim())) {
     return false;
