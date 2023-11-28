@@ -9,6 +9,7 @@ export const getConfig = () => {
   const PASSWORD = process.env.ETHERFI_SC_PASSWORD;
   const TEKU_PROPOSER_FILE = process.env.ETHERFI_SC_TEKU_PROPOSER_FILE;
   const RESTART_MODE = process.env.ETHERFI_SC_RESTART_MODE || 'none';
+  const EXCLUDED_VALIDATORS = process.env.ETHERFI_SC_EXCLUDED_VALIDATORS || '';
 
   const env = {
     GRAPH_URL,
@@ -19,6 +20,7 @@ export const getConfig = () => {
     IPFS_GATEWAY,
     TEKU_PROPOSER_FILE,
     RESTART_MODE,
+    EXCLUDED_VALIDATORS: EXCLUDED_VALIDATORS.split(',').map((el) => el.toLowerCase().trim()),
   };
 
   const valuesAsArray = Object.values(env);

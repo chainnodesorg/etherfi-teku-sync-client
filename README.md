@@ -54,6 +54,8 @@ ETHERFI_SC_PASSWORD=Password123!
 ETHERFI_SC_TEKU_PROPOSER_FILE=/teku_proposer_config.json
 # docker, kubernetes or none
 ETHERFI_SC_RESTART_MODE=docker
+# excluded ids or validator public keys
+ETHERFI_SC_EXCLUDED_VALIDATORS=0xa,0xb,0xc
 ```
 
 Make sure to set `validators-proposer-config-refresh-enabled` to true in your teku (either teku_config.yml or command line).
