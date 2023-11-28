@@ -20,7 +20,6 @@ export const getConfig = () => {
     IPFS_GATEWAY,
     TEKU_PROPOSER_FILE,
     RESTART_MODE,
-    EXCLUDED_VALIDATORS: EXCLUDED_VALIDATORS.split(',').map((el) => el.toLowerCase().trim()),
   };
 
   const valuesAsArray = Object.values(env);
@@ -32,5 +31,5 @@ export const getConfig = () => {
     throw Error('RESTART_MODE given not supported, stopping');
   }
 
-  return env;
+  return { ...env, EXCLUDED_VALIDATORS: EXCLUDED_VALIDATORS.split(',').map((el) => el.toLowerCase().trim()) };
 };
