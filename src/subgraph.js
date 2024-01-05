@@ -3,7 +3,7 @@ import { request, gql } from 'graphql-request';
 export const retrieveBidsFromSubgraph = async (GRAPH_URL, BIDDER) => {
   const bidsQuery = gql`
     {
-      bids(first: 1000, where: { bidderAddress: "${BIDDER}", status: "WON", validator_not: null, validator_: { phase: LIVE} }) {
+      bids(first: 1000, where: { bidderAddress: "${BIDDER}", status: "WON", validator_not: null }) {
         id
         bidderAddress
         pubKeyIndex
