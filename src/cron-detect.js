@@ -37,14 +37,14 @@ async function run() {
 
     if (EXCLUDED_VALIDATORS.includes(bid.id.toLowerCase().trim()) || EXCLUDED_VALIDATORS.includes(validatorPubKey.toLowerCase().trim())) {
       // validator excluded. do not create locally
+      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+        didChangeAnything = true;
+      }
       continue;
     }
 
     if (validatorFilesExist(OUTPUT_LOCATION, bid.id) && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
       // file already exists. skip.
-      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
-        didChangeAnything = true;
-      }
       continue;
     }
     didChangeAnything = true;
