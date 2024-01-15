@@ -8,6 +8,23 @@ export const createFSBidOutput = (location, data, identifier) => {
   createFile(`${location}/keystore-${identifier}.json`, JSON.stringify(data.validatorKeyFile));
 };
 
+/**
+ * Deletes a bid key if it exists
+ * @param {string} location The location prefix for the validator keys.
+ * @param {string} identifier The identifier of this validator key.
+ * @returns {boolean} true if a change happened, false otherwise.
+ */
+export function deleteFSBidOutput(location, identifier) {
+  const deletedOne = deleteFile(`${location}/keystore-${identifier}.txt`);
+  const deletedTwo = deleteFile(`${location}/keystore-${identifier}.json`);
+
+  if (deletedOne || deletedTwo) {
+    return true;
+  }
+
+  return false;
+}
+
 export const validatorFilesExist = (location, identifier) => {
   if (!fs.existsSync(`${location}/keystore-${identifier}.txt`)) {
     return false;
@@ -67,4 +84,17 @@ const createFile = (location, content) => {
     return;
   }
   fs.writeFileSync(location, content);
+};
+
+/**
+ * Delete the given file if it exists.
+ * @param {string} location The path to delete
+ * @returns {boolean} true if file was deleted, false if it wasn't because it didn't exist.
+ */
+const deleteFile = (location) => {
+  if (!fs.existsSync(location)) {
+    return false;
+  }
+  fs.unlinkSync(location);
+  return true;
 };

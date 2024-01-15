@@ -1,9 +1,9 @@
 import { CronJob } from 'cron';
 import { fetchFromIpfs } from './ipfs.js';
-import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig, tekuProposerConfigExists } from './file.js';
+import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig, tekuProposerConfigExists, deleteFSBidOutput } from './file.js';
 import { extractPrivateKeysFromFS, getKeyPairByPubKeyIndex, decryptKeyPairJSON, decryptValidatorKeyInfo } from './decrypt.js';
 import { getConfig } from './config.js';
-import { retrieveBidsFromSubgraph } from './subgraph.js';
+import { retrieveBidsFromSubgraph, retrieveCleanupBidsFromSubgraph } from './subgraph.js';
 import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
 
 async function run() {
@@ -28,6 +28,8 @@ async function run() {
   const bids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER);
 
   let didChangeAnything = false;
+
+  // Get new bids
   for (const bid of bids) {
     const { validator, pubKeyIndex } = bid;
 
@@ -40,6 +42,9 @@ async function run() {
 
     if (validatorFilesExist(OUTPUT_LOCATION, bid.id) && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
       // file already exists. skip.
+      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+        didChangeAnything = true;
+      }
       continue;
     }
     didChangeAnything = true;
@@ -61,6 +66,17 @@ async function run() {
 
     console.log(`< end processing bid with id:${bid.id}`);
   }
+
+  // Cleanup old bids
+  const cleanupBids = await retrieveCleanupBidsFromSubgraph(GRAPH_URL, BIDDER);
+  for (const bid of cleanupBids) {
+    if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+      didChangeAnything = true;
+      console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+    }
+  }
+
+  // Reload Teku if something happened
   if (didChangeAnything) {
     console.log('reloading teku now (sighup)');
     if (RESTART_MODE === 'docker') {
