@@ -43,11 +43,19 @@ export const extractPasswordFromFS = (location) => {
 };
 
 const decryptPrivateKeys = (privateKeysJSON, privKeysPassword) => {
+  let isCBC = false;
+  if (!privateKeysJSON.authTag) {
+    isCBC = true;
+  }
+
   const iv = Buffer.from(privateKeysJSON.iv, 'hex');
   const salt = Buffer.from(privateKeysJSON.salt, 'hex');
   const encryptedData = Buffer.from(privateKeysJSON.data, 'hex');
   const key = crypto.pbkdf2Sync(privKeysPassword, salt, 100000, 32, 'sha256');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+  const decipher = crypto.createDecipheriv(isCBC ? 'aes-256-cbc' : 'aes-256-gcm', key, iv);
+  if (!isCBC) {
+    decipher.setAuthTag(Buffer.from(privateKeysJSON.authTag, 'hex'));
+  }
   const decryptedData = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
   let decryptedDataJSON = JSON.parse(decryptedData.toString('utf8'));
   return decryptedDataJSON;
