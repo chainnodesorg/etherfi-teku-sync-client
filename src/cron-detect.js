@@ -3,7 +3,7 @@ import { fetchFromIpfs } from './ipfs.js';
 import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig, tekuProposerConfigExists, deleteFSBidOutput } from './file.js';
 import { extractPrivateKeysFromFS, getKeyPairByPubKeyIndex, decryptKeyPairJSON, decryptValidatorKeyInfo } from './decrypt.js';
 import { getConfig } from './config.js';
-import { retrieveBidsFromSubgraph, retrieveCleanupBidsFromSubgraph } from './subgraph.js';
+import { retrieveAllBidsIterated, retrieveAllCleanupBidsIterated } from './subgraph.js';
 import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
 
 async function run() {
@@ -25,7 +25,7 @@ async function run() {
   const validatorKey = decryptKeyPairJSON(privateKeys, PASSWORD);
   const { pubKeyArray, privKeyArray } = validatorKey;
 
-  const bids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER);
+  const bids = await retrieveAllBidsIterated(GRAPH_URL, BIDDER);
 
   let didChangeAnything = false;
 
@@ -68,7 +68,7 @@ async function run() {
   }
 
   // Cleanup old bids
-  const cleanupBids = await retrieveCleanupBidsFromSubgraph(GRAPH_URL, BIDDER);
+  const cleanupBids = await retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER);
   for (const bid of cleanupBids) {
     if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
       didChangeAnything = true;
