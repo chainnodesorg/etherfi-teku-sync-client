@@ -31,7 +31,7 @@ export async function retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, FIRST, SKIP) {
 }
 
 export async function retrieveAllBidsIterated(GRAPH_URL, BIDDER) {
-  const bids = [];
+  let bids = [];
   const bidsIterator = 1000;
   let bidsSkip = 0;
   let bidsEndReached = false;
@@ -84,7 +84,7 @@ export async function retrieveCleanupBidsFromSubgraph(GRAPH_URL, BIDDER, FIRST, 
 }
 
 export async function retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER) {
-  const bids = [];
+  let bids = [];
   const bidsIterator = 1000;
   let bidsSkip = 0;
   let bidsEndReached = false;
