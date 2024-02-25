@@ -90,7 +90,7 @@ async function run() {
 }
 
 const detectJob = new CronJob(
-  '*/1 * * * *',
+  '*/5 * * * *',
   function () {
     run();
   },
