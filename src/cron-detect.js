@@ -1,8 +1,14 @@
 import { CronJob } from 'cron';
 import { fetchFromIpfs } from './ipfs.js';
 import { createFSBidOutput, validatorFilesExist, saveTekuProposerConfig, tekuProposerConfigExists, deleteFSBidOutput } from './file.js';
-import { extractPrivateKeysFromFS, getKeyPairByPubKeyIndex, decryptKeyPairJSON, decryptValidatorKeyInfo } from './decrypt.js';
-import { getConfig } from './config.js';
+import {
+  extractPrivateKeysFromFS,
+  getKeyPairByPubKeyIndex,
+  decryptKeyPairJSON,
+  decryptValidatorKeyInfo,
+  decryptBLSKeystore,
+} from './decrypt.js';
+import { ETHERFI_SC_KEY_STORAGE_MODE_CASES, getConfig } from './config.js';
 import { retrieveAllBidsIterated, retrieveAllCleanupBidsIterated } from './subgraph.js';
 import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
 
@@ -18,6 +24,8 @@ async function run() {
     TEKU_PROPOSER_FILE,
     RESTART_MODE,
     EXCLUDED_VALIDATORS,
+    CLEANUP_EXITED_KEYS,
+    KEY_STORAGE_MODE,
   } = getConfig();
 
   const privateKeys = extractPrivateKeysFromFS(PRIVATE_KEYS_FILE_LOCATION);
@@ -25,7 +33,7 @@ async function run() {
   const validatorKey = decryptKeyPairJSON(privateKeys, PASSWORD);
   const { pubKeyArray, privKeyArray } = validatorKey;
 
-  const bids = await retrieveAllBidsIterated(GRAPH_URL, BIDDER);
+  const bids = await retrieveAllBidsIterated(GRAPH_URL, BIDDER, CLEANUP_EXITED_KEYS);
 
   let didChangeAnything = false;
 
@@ -35,53 +43,82 @@ async function run() {
 
     const { ipfsHashForEncryptedValidatorKey, validatorPubKey, etherfiNode } = validator;
 
-    if (EXCLUDED_VALIDATORS.includes(bid.id.toLowerCase().trim()) || EXCLUDED_VALIDATORS.includes(validatorPubKey.toLowerCase().trim())) {
-      // validator excluded. do not create locally
-      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
-        didChangeAnything = true;
+    if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.DISK) {
+      console.log(`**** Running in disk storage mode. ****`);
+
+      if (EXCLUDED_VALIDATORS.includes(bid.id.toLowerCase().trim()) || EXCLUDED_VALIDATORS.includes(validatorPubKey.toLowerCase().trim())) {
+        // validator excluded. do not create locally
+        if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+          didChangeAnything = true;
+        }
+        continue;
       }
-      continue;
+
+      if (validatorFilesExist(OUTPUT_LOCATION, bid.id) && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
+        // file already exists. skip.
+        continue;
+      }
+      didChangeAnything = true;
+
+      console.log(`> start processing bid with id:${bid.id}`);
+
+      // Fetch and decrypt
+      const file = await fetchFromIpfs(ipfsHashForEncryptedValidatorKey);
+      const keypairForIndex = getKeyPairByPubKeyIndex(pubKeyIndex, privKeyArray, pubKeyArray);
+      const data = decryptValidatorKeyInfo(file, keypairForIndex);
+
+      // Store
+      console.log(`creating validator keys for bid:${bid.id}`);
+      createFSBidOutput(OUTPUT_LOCATION, data, bid.id);
+    } else if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.VAULT) {
+      console.log(`**** Running in vault storage mode ****`);
+
+      didChangeAnything = true;
+
+      console.log(`> start processing bid with id:${bid.id}`);
+
+      // Fetch and decrypt
+      const file = await fetchFromIpfs(ipfsHashForEncryptedValidatorKey);
+      const keypairForIndex = getKeyPairByPubKeyIndex(pubKeyIndex, privKeyArray, pubKeyArray);
+      const data = decryptValidatorKeyInfo(file, keypairForIndex);
+
+      // Store
+      console.log(`creating validator keys for bid:${bid.id}`);
+      const validatorKeyKeystore = data.validatorKeyFile;
+      const validatorKeyPassword = data.validatorKeyPassword;
+      const decryptedValidatorPrivateKey = await decryptBLSKeystore(validatorKeyKeystore, validatorKeyPassword);
     }
-
-    if (validatorFilesExist(OUTPUT_LOCATION, bid.id) && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
-      // file already exists. skip.
-      continue;
-    }
-    didChangeAnything = true;
-
-    console.log(`> start processing bid with id:${bid.id}`);
-
-    // Fetch and decrypt
-    const file = await fetchFromIpfs(ipfsHashForEncryptedValidatorKey);
-    const keypairForIndex = getKeyPairByPubKeyIndex(pubKeyIndex, privKeyArray, pubKeyArray);
-    const data = decryptValidatorKeyInfo(file, keypairForIndex);
-
-    // Store
-    console.log(`creating validator keys for bid:${bid.id}`);
-    createFSBidOutput(OUTPUT_LOCATION, data, bid.id);
 
     // Add fee recipient
-    console.log(`saving proposer config`);
-    saveTekuProposerConfig(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode);
+    if (TEKU_PROPOSER_FILE) {
+      console.log(`saving proposer config`);
+      saveTekuProposerConfig(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode);
+    } else {
+      console.log(`skipping teku proposer config saving as no path was defined in env.`);
+    }
 
     console.log(`< end processing bid with id:${bid.id}`);
   }
 
   // Cleanup old bids
-  const cleanupBids = await retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER);
-  for (const bid of cleanupBids) {
-    if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
-      didChangeAnything = true;
-      console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+  if (CLEANUP_EXITED_KEYS) {
+    const cleanupBids = await retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER);
+    for (const bid of cleanupBids) {
+      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+        didChangeAnything = true;
+        console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+      }
     }
   }
 
-  // Reload Teku if something happened
+  // Restart vc if needed.
   if (didChangeAnything) {
-    console.log('reloading teku now (sighup)');
+    // Reload Teku if something happened
     if (RESTART_MODE === 'docker') {
+      console.log('reloading teku now (sighup)');
       await sigHupAllTekus();
     } else if (RESTART_MODE === 'kubernetes') {
+      console.log('reloading teku in kubernetes now (sighup)');
       await kubernetesSigHupTeku();
     }
   }
@@ -89,14 +126,16 @@ async function run() {
   console.log('=====detecting new validators * end * =====');
 }
 
-const detectJob = new CronJob(
-  '*/5 * * * *',
-  function () {
-    run();
+const detectJob = CronJob.from({
+  cronTime: '*/5 * * * *',
+  onTick: async function () {
+    await run();
   },
-  null,
-  true,
-  'America/Los_Angeles',
-);
+  onComplete: null,
+  start: true,
+  timeZone: 'UTC',
+  runOnInit: true,
+  waitForCompletion: true,
+});
 
 export default detectJob;

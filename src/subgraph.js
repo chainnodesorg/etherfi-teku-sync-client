@@ -1,9 +1,18 @@
 import { request, gql } from 'graphql-request';
 
-export async function retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, FIRST, SKIP) {
+export async function retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, FIRST, SKIP, CLEANUP_EXITED_KEYS) {
   const bidsQuery = gql`
     {
-      bids(first: ${FIRST}, skip: ${SKIP}, where: { bidderAddress: "${BIDDER}", status: "WON", validator_not: null, validator_: { phase_in: ["LIVE", "WAITING_FOR_APPROVAL"] } }) {
+      bids(
+        first: ${FIRST},
+        skip: ${SKIP},
+        where: {
+          bidderAddress: "${BIDDER}",
+          status: "WON",
+          validator_not: null,
+          ${CLEANUP_EXITED_KEYS ? 'validator_: { phase_in: ["LIVE", "WAITING_FOR_APPROVAL"] }' : ''}
+        }
+      ) {
         id
         bidderAddress
         pubKeyIndex
@@ -30,13 +39,13 @@ export async function retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, FIRST, SKIP) {
   return bids;
 }
 
-export async function retrieveAllBidsIterated(GRAPH_URL, BIDDER) {
+export async function retrieveAllBidsIterated(GRAPH_URL, BIDDER, CLEANUP_EXITED_KEYS) {
   let bids = [];
   const bidsIterator = 1000;
   let bidsSkip = 0;
   let bidsEndReached = false;
   while (!bidsEndReached) {
-    const newBids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, bidsIterator, bidsSkip);
+    const newBids = await retrieveBidsFromSubgraph(GRAPH_URL, BIDDER, bidsIterator, bidsSkip, CLEANUP_EXITED_KEYS);
     bids = bids.concat(newBids);
 
     if (newBids.length < bidsIterator) {

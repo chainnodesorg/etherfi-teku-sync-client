@@ -2,6 +2,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import EC from 'elliptic';
 import BN from 'bn.js';
+import { IKeystore, create, decrypt as decryptBLS, verifyPassword, isValidKeystore, validateKeystore } from '@chainsafe/bls-keystore';
 
 function decrypt(text, ENCRYPTION_KEY) {
   // should have the form [iv]:[ciphertext]
@@ -112,3 +113,13 @@ export const getKeyPairByPubKeyIndex = (pubkeyIndexString, privateKeys, publicKe
     publicKey: publicKeys[parseAsInt],
   };
 };
+
+export async function decryptBLSKeystore(blsKeystore, password) {
+  await verifyPassword(blsKeystore, password);
+
+  const decryptedPrivateKey = await decryptBLS(blsKeystore, password);
+
+  return `0x${Array.from(decryptedPrivateKey)
+    .map((element) => element.toString(16).padStart(2, '0'))
+    .join('')}`;
+}

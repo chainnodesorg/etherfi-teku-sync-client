@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { getConfig } from './config.js';
-import { getAddress } from 'ethers/lib/utils.js';
+import { getAddress } from 'ethers';
 
 export const createFSBidOutput = (location, data, identifier) => {
   createDirSafe(location);
@@ -37,6 +37,11 @@ export const validatorFilesExist = (location, identifier) => {
 };
 
 export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipient) => {
+  if (!tekuProposerConfigFile) {
+    // undefined teku proposer file means we are not interested in this.
+    return;
+  }
+
   const proposerConfig = JSON.parse(fs.readFileSync(tekuProposerConfigFile));
   if (!proposerConfig.proposer_config) {
     proposerConfig.proposer_config = {};
@@ -51,6 +56,11 @@ export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipi
 };
 
 export function tekuProposerConfigExists(tekuProposerConfigFile, pubKey, feeRecipient) {
+  if (!tekuProposerConfigFile) {
+    // undefined teku proposer file means we are not interested in this.
+    return true;
+  }
+
   const proposerConfig = JSON.parse(fs.readFileSync(tekuProposerConfigFile));
   if (!proposerConfig) {
     return false;
