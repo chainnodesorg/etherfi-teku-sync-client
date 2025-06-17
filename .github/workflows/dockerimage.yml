@@ -51,3 +51,7 @@ jobs:
       - name: Retag Docker Image latest
         if: github.ref == 'refs/heads/main'
         run: docker tag ${{ env.SHA_TAG }} ${{ env.LATEST_TAG }} && docker push ${{ env.LATEST_TAG }}
+
+      # Tag as tag
+      - name: Retag Docker Image to tag
+        run: docker tag ${{ env.SHA_TAG }} ${{ env.LATEST_TAG }}:${{ github.ref_name }} && docker push ${{ env.LATEST_TAG }}:${{ github.ref_name }}
