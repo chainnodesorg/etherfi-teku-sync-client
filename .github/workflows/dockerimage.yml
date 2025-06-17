@@ -31,9 +31,11 @@ jobs:
       - name: Set env
         id: tag_env
         env:
+          RAW_REPO_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           SHA_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           LATEST_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         run: |
+          echo "RAW_REPO_TAG=$RAW_REPO_TAG" >> $GITHUB_ENV
           export SHA_7=$(echo $GITHUB_SHA | head -c7)
           echo "SHA_TAG=$SHA_TAG:$SHA_7" >> $GITHUB_ENV
           echo "STAGING_TAG=$STAGING_TAG" >> $GITHUB_ENV
@@ -54,4 +56,4 @@ jobs:
 
       # Tag as tag
       - name: Retag Docker Image to tag
-        run: docker tag ${{ env.SHA_TAG }} ${{ env.LATEST_TAG }}:${{ github.ref_name }} && docker push ${{ env.LATEST_TAG }}:${{ github.ref_name }}
+        run: docker tag ${{ env.SHA_TAG }} ${{ env.RAW_REPO_TAG }}:${{ github.ref_name }} && docker push ${{ env.RAW_REPO_TAG }}:${{ github.ref_name }}
