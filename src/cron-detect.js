@@ -11,6 +11,7 @@ import {
 import { ETHERFI_SC_KEY_STORAGE_MODE_CASES, getConfig } from './config.js';
 import { retrieveAllBidsIterated, retrieveAllCleanupBidsIterated } from './subgraph.js';
 import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
+import { doesValidatorKeyExistInVault, deleteValidatorKeyFromVault, storeValidatorKeyInVault } from './vault.js';
 
 async function run() {
   console.log('===== detecting new validators * start * =====');
@@ -37,6 +38,12 @@ async function run() {
 
   let didChangeAnything = false;
 
+  if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.DISK) {
+    console.log(`**** Running in disk storage mode. ****`);
+  } else if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.VAULT) {
+    console.log(`**** Running in vault storage mode. ****`);
+  }
+
   // Get new bids
   for (const bid of bids) {
     const { validator, pubKeyIndex } = bid;
@@ -44,7 +51,7 @@ async function run() {
     const { ipfsHashForEncryptedValidatorKey, validatorPubKey, etherfiNode } = validator;
 
     if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.DISK) {
-      console.log(`**** Running in disk storage mode. ****`);
+      // **** Running in disk storage mode. ****
 
       if (EXCLUDED_VALIDATORS.includes(bid.id.toLowerCase().trim()) || EXCLUDED_VALIDATORS.includes(validatorPubKey.toLowerCase().trim())) {
         // validator excluded. do not create locally
@@ -71,8 +78,22 @@ async function run() {
       console.log(`creating validator keys for bid:${bid.id}`);
       createFSBidOutput(OUTPUT_LOCATION, data, bid.id);
     } else if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.VAULT) {
-      console.log(`**** Running in vault storage mode ****`);
+      // **** Running in vault storage mode. ****
 
+      if (EXCLUDED_VALIDATORS.includes(bid.id.toLowerCase().trim()) || EXCLUDED_VALIDATORS.includes(validatorPubKey.toLowerCase().trim())) {
+        // validator excluded. do not create in vault
+        const didValidatorKeyExist = await deleteValidatorKeyFromVault(validatorPubKey);
+        if (didValidatorKeyExist) {
+          didChangeAnything = true;
+        }
+        continue;
+      }
+
+      const doesValidatorKeyExist = await doesValidatorKeyExistInVault(validatorPubKey);
+      if (doesValidatorKeyExist && tekuProposerConfigExists(TEKU_PROPOSER_FILE, validatorPubKey, etherfiNode)) {
+        // key already exists in vault. skip.
+        continue;
+      }
       didChangeAnything = true;
 
       console.log(`> start processing bid with id:${bid.id}`);
@@ -87,6 +108,7 @@ async function run() {
       const validatorKeyKeystore = data.validatorKeyFile;
       const validatorKeyPassword = data.validatorKeyPassword;
       const decryptedValidatorPrivateKey = await decryptBLSKeystore(validatorKeyKeystore, validatorKeyPassword);
+      await storeValidatorKeyInVault(validatorPubKey, 'store_only_tmp_data_for_now');
     }
 
     // Add fee recipient
@@ -104,9 +126,17 @@ async function run() {
   if (CLEANUP_EXITED_KEYS) {
     const cleanupBids = await retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER);
     for (const bid of cleanupBids) {
-      if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
-        didChangeAnything = true;
-        console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+      if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.DISK) {
+        if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
+          didChangeAnything = true;
+          console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+        }
+      } else if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.VAULT) {
+        const didValidatorKeyExist = await deleteValidatorKeyFromVault(bid.validator.validatorPubKey);
+        if (didValidatorKeyExist) {
+          didChangeAnything = true;
+          console.log(`> cleaned up old, unhealthy bid with id:${bid.id}`);
+        }
       }
     }
   }

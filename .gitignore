@@ -7,3 +7,4 @@ backup
 
 /privateEtherfiKeystore.json
 /keys
+/.test-client-token

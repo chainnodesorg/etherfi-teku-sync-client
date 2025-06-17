@@ -70,7 +70,7 @@ export function tekuProposerConfigExists(tekuProposerConfigFile, pubKey, feeReci
     return false;
   }
 
-  const saved = proposerConfig.proposer_config[pubKey.toLowerCase().trim()];
+  const saved = proposerConfig.proposer_config[`0x${pubKey.replace(/0x/g, '')}`.toLowerCase().trim()];
   if (!saved) {
     return false;
   }

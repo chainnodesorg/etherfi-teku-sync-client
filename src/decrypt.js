@@ -2,7 +2,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import EC from 'elliptic';
 import BN from 'bn.js';
-import { IKeystore, create, decrypt as decryptBLS, verifyPassword, isValidKeystore, validateKeystore } from '@chainsafe/bls-keystore';
+import { create, decrypt as decryptBLS, verifyPassword, isValidKeystore, validateKeystore } from '@chainsafe/bls-keystore';
 
 function decrypt(text, ENCRYPTION_KEY) {
   // should have the form [iv]:[ciphertext]

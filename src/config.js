@@ -12,11 +12,6 @@ export const ETHERFI_SC_KEY_STORAGE_MODE_CASES = {
   VAULT: 'vault',
 };
 
-export const ETHERFI_SC_VAULT_AUTHENTICATION_MODE_CASES = {
-  TOKEN: 'token',
-  KUBERNETES: 'kubernetes',
-};
-
 const schema = Joi.object({
   ETHERFI_SC_IPFS_GATEWAY: Joi.string().uri({ scheme: 'https' }).required(),
   ETHERFI_SC_GRAPH_URL: Joi.string().uri({ scheme: 'https' }).required(),
@@ -59,37 +54,10 @@ const schema = Joi.object({
     {
       then: Joi.object({
         ETHERFI_SC_VAULT_URL: Joi.string().uri({ scheme: 'https' }).required(),
-        ETHERFI_SC_VAULT_AUTHENTICATION_MODE: Joi.string()
-          .pattern(
-            new RegExp(`^(${ETHERFI_SC_VAULT_AUTHENTICATION_MODE_CASES.TOKEN}|${ETHERFI_SC_VAULT_AUTHENTICATION_MODE_CASES.KUBERNETES})$`),
-          )
-          .required(),
-      })
-        .when(
-          Joi.object({
-            ETHERFI_SC_VAULT_AUTHENTICATION_MODE: Joi.string()
-              .pattern(new RegExp(`^(${ETHERFI_SC_VAULT_AUTHENTICATION_MODE_CASES.TOKEN})$`))
-              .required(),
-          }).unknown(),
-          {
-            then: Joi.object({
-              ETHERFI_SC_VAULT_CLIENT_TOKEN: Joi.string().required(),
-            }),
-          },
-        )
-        .when(
-          Joi.object({
-            ETHERFI_SC_VAULT_AUTHENTICATION_MODE: Joi.string()
-              .pattern(new RegExp(`^(${ETHERFI_SC_VAULT_AUTHENTICATION_MODE_CASES.KUBERNETES})$`))
-              .required(),
-          }).unknown(),
-          {
-            then: Joi.object({
-              ETHERFI_SC_VAULT_KUBERNETES_AUTH_PATH: Joi.string().required(),
-              ETHERFI_SC_VAULT_KUBERNETES_SERVICE_ACCOUNT_PATH: Joi.string().required(),
-            }),
-          },
-        ),
+        ETHERFI_SC_VAULT_CLIENT_TOKEN_PATH: Joi.string().required(),
+        ETHERFI_SC_VAULT_VALIDATORS_SECRET_MOUNT_PATH: Joi.string().required(),
+        ETHERFI_SC_VAULT_VALIDATORS_PATH: Joi.string().required(),
+      }),
     },
   )
   .unknown();
@@ -113,9 +81,8 @@ export const getConfig = () => {
     KEY_STORAGE_MODE: parsedVariables.value.ETHERFI_SC_KEY_STORAGE_MODE,
     DISK_OUTPUT_LOCATION: parsedVariables.value.ETHERFI_SC_DISK_OUTPUT_LOCATION,
     VAULT_URL: parsedVariables.value.ETHERFI_SC_VAULT_URL,
-    VAULT_AUTHENTICATION_MODE: parsedVariables.value.ETHERFI_SC_VAULT_AUTHENTICATION_MODE,
-    VAULT_CLIENT_TOKEN: parsedVariables.value.ETHERFI_SC_VAULT_CLIENT_TOKEN,
-    VAULT_KUBERNETES_AUTH_PATH: parsedVariables.value.ETHERFI_SC_VAULT_KUBERNETES_AUTH_PATH,
-    VAULT_KUBERNETES_SERVICE_ACCOUNT_PATH: parsedVariables.value.ETHERFI_SC_VAULT_KUBERNETES_SERVICE_ACCOUNT_PATH,
+    VAULT_CLIENT_TOKEN_PATH: parsedVariables.value.ETHERFI_SC_VAULT_CLIENT_TOKEN_PATH,
+    VAULT_VALIDATORS_SECRET_MOUNT_PATH: parsedVariables.value.ETHERFI_SC_VAULT_VALIDATORS_SECRET_MOUNT_PATH,
+    VAULT_VALIDATORS_PATH: parsedVariables.value.ETHERFI_SC_VAULT_VALIDATORS_PATH,
   };
 };

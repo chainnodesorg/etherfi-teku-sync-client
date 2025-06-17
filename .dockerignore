@@ -5,3 +5,6 @@ node_modules
 .nvmrc
 docker-compose.yml
 Dockerfile
+/privateEtherfiKeystore.json
+/keys
+/.test-client-token
