@@ -108,7 +108,7 @@ async function run() {
       const validatorKeyKeystore = data.validatorKeyFile;
       const validatorKeyPassword = data.validatorKeyPassword;
       const decryptedValidatorPrivateKey = await decryptBLSKeystore(validatorKeyKeystore, validatorKeyPassword);
-      await storeValidatorKeyInVault(validatorPubKey, 'store_only_tmp_data_for_now');
+      await storeValidatorKeyInVault(validatorPubKey, decryptedValidatorPrivateKey);
     }
 
     // Add fee recipient
