@@ -36,7 +36,7 @@ export const validatorFilesExist = (location, identifier) => {
   return true;
 };
 
-export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipient) => {
+export async function saveTekuProposerConfig(tekuProposerConfigFile, allValidatorPubKeysAndFeeRecipients) {
   if (!tekuProposerConfigFile) {
     // undefined teku proposer file means we are not interested in this.
     return;
@@ -47,13 +47,15 @@ export const saveTekuProposerConfig = (tekuProposerConfigFile, pubKey, feeRecipi
     proposerConfig.proposer_config = {};
   }
 
-  proposerConfig.proposer_config[pubKey.toLowerCase().trim()] = {
-    fee_recipient: getAddress(feeRecipient.toLowerCase().trim()),
-  };
+  for (const validatorPubKeyAndFeeRecipient of allValidatorPubKeysAndFeeRecipients) {
+    proposerConfig.proposer_config[validatorPubKeyAndFeeRecipient.validatorPubKey.toLowerCase().trim()] = {
+      fee_recipient: getAddress(validatorPubKeyAndFeeRecipient.validatorFeeRecipient.toLowerCase().trim()),
+    };
+  }
 
   // write back
   fs.writeFileSync(tekuProposerConfigFile, JSON.stringify(proposerConfig, null, 2));
-};
+}
 
 export function tekuProposerConfigExists(tekuProposerConfigFile, pubKey, feeRecipient) {
   if (!tekuProposerConfigFile) {
