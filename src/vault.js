@@ -125,8 +125,8 @@ export async function saveWeb3SignerConfig(web3SignerConfigFile, publicKeys) {
 
     const newConfigKeyPath = `/v1/${VAULT_VALIDATORS_SECRET_MOUNT_PATH}/data/${VAULT_VALIDATORS_PATH}/${normalizedPubKey}`;
     const vaultUrlAsURL = new URL(VAULT_URL);
-    const newServerHost = `${vaultUrlAsURL.protocol}//${vaultUrlAsURL.hostname}`;
-    const newServerPort = `${vaultUrlAsURL.port}`;
+    const newServerHost = `${vaultUrlAsURL.hostname}`;
+    const newServerPort = `${vaultUrlAsURL.port || '443'}`;
     const newConfig = {
       type: 'hashicorp',
       keyType: 'BLS',
