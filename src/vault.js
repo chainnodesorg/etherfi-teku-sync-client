@@ -216,5 +216,5 @@ export async function reloadWeb3Signer() {
     });
   }
 
-  return await axios.get(`${WEB3SIGNER_RELOAD_URL}/reload`, { httpsAgent: httpsAgent });
+  return await axios.post(`${WEB3SIGNER_RELOAD_URL}/reload`, null, { httpsAgent: httpsAgent });
 }
