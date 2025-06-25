@@ -36,7 +36,7 @@ const schema = Joi.object({
   }),
   ETHERFI_SC_TEKU_PROPOSER_FILE: Joi.string().optional(),
   ETHERFI_SC_WEB3SIGNER_CONFIG_FILE: Joi.string().optional(),
-  ETHERFI_SC_WEB3SIGNER_RELOAD_URL: Joi.url().optional(),
+  ETHERFI_SC_WEB3SIGNER_RELOAD_URL: Joi.string().uri().optional(),
   ETHERFI_SC_RESTART_MODE: Joi.string()
     .pattern(
       new RegExp(
