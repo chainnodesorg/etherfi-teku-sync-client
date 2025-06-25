@@ -1,6 +1,7 @@
 import axios, { isCancel, AxiosError } from 'axios';
 import { getConfig } from './config.js';
 import fs from 'fs';
+import https from 'https';
 import YAML from 'yaml';
 import _ from 'lodash';
 
@@ -187,7 +188,33 @@ export async function saveWeb3SignerConfig(web3SignerConfigFile, publicKeys) {
 }
 
 export async function reloadWeb3Signer() {
-  const { WEB3SIGNER_RELOAD_URL } = getConfig();
+  const {
+    WEB3SIGNER_RELOAD_URL,
+    WEB3SIGNER_RELOAD_URL_CLIENT_CERT_PATH,
+    WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PATH,
+    WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PW_PATH,
+    WEB3SIGNER_RELOAD_URL_SERVER_CERT_PATH,
+    WEB3SIGNER_RELOAD_URL_SERVER_TLS_NAME,
+  } = getConfig();
 
-  await axios.get(`${WEB3SIGNER_RELOAD_URL}/reload`);
+  let httpsAgent = undefined;
+  if (
+    WEB3SIGNER_RELOAD_URL_CLIENT_CERT_PATH &&
+    WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PATH &&
+    WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PW_PATH &&
+    WEB3SIGNER_RELOAD_URL_SERVER_CERT_PATH &&
+    WEB3SIGNER_RELOAD_URL_SERVER_TLS_NAME
+  ) {
+    // Use mTLS.
+    httpsAgent = new https.Agent({
+      key: fs.readFileSync(WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PATH),
+      cert: fs.readFileSync(WEB3SIGNER_RELOAD_URL_CLIENT_CERT_PATH),
+      ca: fs.readFileSync(WEB3SIGNER_RELOAD_URL_SERVER_CERT_PATH),
+      passphrase: fs.readFileSync(WEB3SIGNER_RELOAD_URL_CLIENT_KEY_PW_PATH).toString().trim(),
+      rejectUnauthorized: true,
+      servername: WEB3SIGNER_RELOAD_URL_SERVER_TLS_NAME,
+    });
+  }
+
+  return await axios.get(`${WEB3SIGNER_RELOAD_URL}/reload`, { httpsAgent: httpsAgent });
 }
