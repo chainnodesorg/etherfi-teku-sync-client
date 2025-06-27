@@ -238,12 +238,12 @@ async function quickReloadWeb3SignerIfNeeded() {
       console.log(`quick reloading web3signer even though the config hasn't changed as the reload before did not seem to succeed`);
       try {
         await reloadWeb3Signer();
-        triedToReloadWeb3SignerBefore; = true;
+        triedToReloadWeb3SignerBefore = true;
         web3SignerReloadedBefore = true;
       } catch (error) {
         console.log(`ERROR: Couldn't quick reload web3signer. Will try later.`);
         console.log(error);
-        triedToReloadWeb3SignerBefore; = true;
+        triedToReloadWeb3SignerBefore = true;
         web3SignerReloadedBefore = false;
       }
     }
