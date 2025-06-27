@@ -19,6 +19,7 @@ import {
   reloadWeb3Signer,
 } from './vault.js';
 
+let triedToReloadWeb3SignerBefore = false;
 let web3SignerReloadedBefore = false;
 
 async function run() {
@@ -162,10 +163,12 @@ async function run() {
         console.log(`reloading web3signer at the given url as config was changed`);
         try {
           await reloadWeb3Signer();
+          triedToReloadWeb3SignerBefore = true;
           web3SignerReloadedBefore = true;
         } catch (error) {
           console.log(`ERROR: Couldn't reload web3signer. Will try later.`);
           console.log(error);
+          triedToReloadWeb3SignerBefore = true;
           web3SignerReloadedBefore = false;
         }
       } else {
@@ -177,10 +180,12 @@ async function run() {
         console.log(`reloading web3signer even though the config hasn't changed as the reload before did not seem to succeed`);
         try {
           await reloadWeb3Signer();
+          triedToReloadWeb3SignerBefore = true;
           web3SignerReloadedBefore = true;
         } catch (error) {
           console.log(`ERROR: Couldn't reload web3signer. Will try later.`);
           console.log(error);
+          triedToReloadWeb3SignerBefore = true;
           web3SignerReloadedBefore = false;
         }
       }
@@ -223,7 +228,29 @@ async function run() {
   console.log('=====detecting new validators * end * =====');
 }
 
-const detectJob = CronJob.from({
+async function quickReloadWeb3SignerIfNeeded() {
+  const { WEB3SIGNER_CONFIG_FILE, WEB3SIGNER_RELOAD_URL } = getConfig();
+
+  // Create web3signer config file
+  if (WEB3SIGNER_CONFIG_FILE) {
+    if (WEB3SIGNER_RELOAD_URL && triedToReloadWeb3SignerBefore && !web3SignerReloadedBefore) {
+      // Something went wrong before so run reload just to be sure.
+      console.log(`quick reloading web3signer even though the config hasn't changed as the reload before did not seem to succeed`);
+      try {
+        await reloadWeb3Signer();
+        triedToReloadWeb3SignerBefore; = true;
+        web3SignerReloadedBefore = true;
+      } catch (error) {
+        console.log(`ERROR: Couldn't quick reload web3signer. Will try later.`);
+        console.log(error);
+        triedToReloadWeb3SignerBefore; = true;
+        web3SignerReloadedBefore = false;
+      }
+    }
+  }
+}
+
+export const cronJobDetectValidators = CronJob.from({
   cronTime: '*/5 * * * *',
   onTick: async function () {
     await run();
@@ -235,4 +262,14 @@ const detectJob = CronJob.from({
   waitForCompletion: true,
 });
 
-export default detectJob;
+export const cronJobQuickReloadWeb3Signer = CronJob.from({
+  cronTime: '*/15 * * * * *',
+  onTick: async function () {
+    await quickReloadWeb3SignerIfNeeded();
+  },
+  onComplete: null,
+  start: true,
+  timeZone: 'UTC',
+  runOnInit: false,
+  waitForCompletion: true,
+});
