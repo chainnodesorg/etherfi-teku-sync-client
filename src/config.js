@@ -19,7 +19,18 @@ export const ETHERFI_SC_KEY_STORAGE_MODE_CASES = {
 
 const schema = Joi.object({
   ETHERFI_SC_IPFS_GATEWAY: Joi.string().uri({ scheme: 'https' }).required(),
-  ETHERFI_SC_GRAPH_URL: Joi.string().uri({ scheme: 'https' }).required(),
+  ETHERFI_SC_GRAPH_URL: Joi.string()
+    .uri({ scheme: ['https', 'http'] })
+    .optional(),
+  ETHERFI_SC_RPC_URL: Joi.string()
+    .uri({ scheme: ['https', 'http', 'ws', 'wss'] })
+    .required(),
+  ETHERFI_SC_AUCTION_MANAGER_CONTRACT: Joi.string().hex({ prefix: true }).length(42).default('0x00C452aFFee3a17d9Cecc1Bcd2B8d5C7635C4CB9'),
+  ETHERFI_SC_STAKING_MANAGER_CONTRACT: Joi.string().hex({ prefix: true }).length(42).default('0x25e821b7197B146F7713C3b89B6A4D83516B912d'),
+  ETHERFI_SC_NODES_MANAGER_CONTRACT: Joi.string().hex({ prefix: true }).length(42).default('0x8B71140AD2e5d1E7018d2a7f8a288BD3CD38916F'),
+  ETHERFI_SC_START_BLOCK: Joi.number().integer().min(0).default(17103480),
+  ETHERFI_SC_SCAN_CHUNK_SIZE: Joi.number().integer().min(100).max(100000).default(5000),
+  ETHERFI_SC_MAX_PARALLEL_REQUESTS: Joi.number().integer().min(1).max(20).default(5),
   ETHERFI_SC_BIDDER: Joi.string().hex({ prefix: true }).length(42).required(),
   ETHERFI_SC_MODE: Joi.string()
     .pattern(new RegExp(`^(${ETHERFI_SC_MODE_CASES.CREATE}|${ETHERFI_SC_MODE_CASES.CONFIG})$`))
@@ -91,6 +102,7 @@ const schema = Joi.object({
         ETHERFI_SC_VAULT_CLIENT_TOKEN_PATH: Joi.string().required(),
         ETHERFI_SC_VAULT_VALIDATORS_SECRET_MOUNT_PATH: Joi.string().required(),
         ETHERFI_SC_VAULT_VALIDATORS_PATH: Joi.string().required(),
+        ETHERFI_SC_VAULT_STATE_PATH: Joi.string().required(),
       }),
     },
   )
@@ -105,6 +117,13 @@ export const getConfig = () => {
   return {
     IPFS_GATEWAY: parsedVariables.value.ETHERFI_SC_IPFS_GATEWAY,
     GRAPH_URL: parsedVariables.value.ETHERFI_SC_GRAPH_URL,
+    RPC_URL: parsedVariables.value.ETHERFI_SC_RPC_URL,
+    AUCTION_MANAGER_CONTRACT: parsedVariables.value.ETHERFI_SC_AUCTION_MANAGER_CONTRACT,
+    STAKING_MANAGER_CONTRACT: parsedVariables.value.ETHERFI_SC_STAKING_MANAGER_CONTRACT,
+    NODES_MANAGER_CONTRACT: parsedVariables.value.ETHERFI_SC_NODES_MANAGER_CONTRACT,
+    START_BLOCK: parsedVariables.value.ETHERFI_SC_START_BLOCK,
+    SCAN_CHUNK_SIZE: parsedVariables.value.ETHERFI_SC_SCAN_CHUNK_SIZE,
+    MAX_PARALLEL_REQUESTS: parsedVariables.value.ETHERFI_SC_MAX_PARALLEL_REQUESTS,
     BIDDER: parsedVariables.value.ETHERFI_SC_BIDDER,
     MODE: parsedVariables.value.ETHERFI_SC_MODE,
     PRIVATE_KEYS_FILE_LOCATION: parsedVariables.value.ETHERFI_SC_PRIVATE_KEYS_FILE_LOCATION,
@@ -126,5 +145,6 @@ export const getConfig = () => {
     VAULT_CLIENT_TOKEN_PATH: parsedVariables.value.ETHERFI_SC_VAULT_CLIENT_TOKEN_PATH,
     VAULT_VALIDATORS_SECRET_MOUNT_PATH: parsedVariables.value.ETHERFI_SC_VAULT_VALIDATORS_SECRET_MOUNT_PATH,
     VAULT_VALIDATORS_PATH: parsedVariables.value.ETHERFI_SC_VAULT_VALIDATORS_PATH,
+    VAULT_STATE_PATH: parsedVariables.value.ETHERFI_SC_VAULT_STATE_PATH,
   };
 };

@@ -9,7 +9,7 @@ import {
   decryptBLSKeystore,
 } from './decrypt.js';
 import { ETHERFI_SC_KEY_STORAGE_MODE_CASES, ETHERFI_SC_MODE_CASES, getConfig } from './config.js';
-import { retrieveAllBidsIterated, retrieveAllCleanupBidsIterated } from './subgraph.js';
+import { retrieveAllBidsIterated, retrieveAllCleanupBidsIterated } from './contract-scanner.js';
 import { sigHupAllTekus, kubernetesSigHupTeku } from './teku.js';
 import {
   doesValidatorKeyExistInVault,
@@ -26,7 +26,7 @@ async function run() {
   console.log('===== detecting new validators * start * =====');
 
   const {
-    GRAPH_URL,
+    RPC_URL,
     BIDDER,
     MODE,
     PRIVATE_KEYS_FILE_LOCATION,
@@ -41,7 +41,7 @@ async function run() {
     WEB3SIGNER_RELOAD_URL,
   } = getConfig();
 
-  const bids = await retrieveAllBidsIterated(GRAPH_URL, BIDDER, CLEANUP_EXITED_KEYS);
+  const bids = await retrieveAllBidsIterated(RPC_URL, BIDDER, CLEANUP_EXITED_KEYS);
 
   let didChangeAnything = false;
 
@@ -196,7 +196,7 @@ async function run() {
 
   // Cleanup old bids
   if (MODE === ETHERFI_SC_MODE_CASES.CREATE && CLEANUP_EXITED_KEYS) {
-    const cleanupBids = await retrieveAllCleanupBidsIterated(GRAPH_URL, BIDDER);
+    const cleanupBids = await retrieveAllCleanupBidsIterated(RPC_URL, BIDDER);
     for (const bid of cleanupBids) {
       if (KEY_STORAGE_MODE === ETHERFI_SC_KEY_STORAGE_MODE_CASES.DISK) {
         if (deleteFSBidOutput(OUTPUT_LOCATION, bid.id)) {
@@ -251,7 +251,7 @@ async function quickReloadWeb3SignerIfNeeded() {
 }
 
 export const cronJobDetectValidators = CronJob.from({
-  cronTime: '*/5 * * * *',
+  cronTime: '*/15 * * * *',
   onTick: async function () {
     await run();
   },
